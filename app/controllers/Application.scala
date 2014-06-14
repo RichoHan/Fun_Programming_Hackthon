@@ -15,12 +15,33 @@ import scala.util.matching.Regex
 import scala.collection.mutable.ArrayBuffer
 import scala.io._
 import java.io._
+import State._
+
+case class State[S,+A](run: S => (A,S))
+{
+  def map[B](f: A => B): State[S,B] = State {
+    (s: S) => {
+      val p = run(s)
+      (f(p._1), p._2)
+    }
+  }
+  // flatMap(a => unit(f(a)))
+
+
+  def flatMap[B](f: A => State[S,B]): State[S,B] = State {
+    (s: S) => {
+      val p = run(s)
+      f(p._1).run(p._2)
+    }
+  }
+  
+}
 
 object Application extends Controller {
 
     // Call index.scala.html
   	def index = Action {
-		val result = grabURLBack(getRealIndex("http://www.ptt.cc/bbs/BikerShop/index.html", 1),1)
+		val result = grabURLBack(getRealIndex("http://www.ptt.cc/bbs/BikerShop/index.html", 1),5)
   		Ok(views.html.index("Your new application is not ready.", result.toArray))
   	}
 
@@ -70,20 +91,40 @@ object Application extends Controller {
         }
 
     }
-
+    
     def grabURLBack(url: String, amount : Int)  = {
         val start = url.substring(37,41).toInt
         var result = ArrayBuffer[String]()
         for( k <- 0 to amount) {
             var postListResult = new postList("")
-            println("http://www.ptt.cc/bbs/BikerShop/index"+(start-k)+".html")
+            // println("http://www.ptt.cc/bbs/BikerShop/index"+(start-k)+".html")
 
             oncePerSecond()
             result.appendAll(grabURLArray(postListResult.urlToResult("http://www.ptt.cc/bbs/BikerShop/index"+(start-k)+".html")))
             // result.appendAll(grabURLArray(postListResult.urlToResult("http://www.ptt.cc/bbs/BikerShop/index"+(start-k)+".html")))
         }
         
-        result
+        var cleanResult = ArrayBuffer[String]()
+        var cleanResult2 = ArrayBuffer[String]()
+        for(item <- result) {
+            if(item != Nil && item.toString != "" && item.length >= 2 && item.toString.take(5)!="<span"){
+                cleanResult.append(item)
+            }
+        }
+        for(i <- 0 to cleanResult.length-1) {
+            if(cleanResult(i).toString.takeRight(4) == "html" && cleanResult(i+3).toString == "====="){
+                cleanResult2.append(cleanResult(i))
+                cleanResult2.append(cleanResult(i+1))
+                cleanResult2.append(cleanResult(i+2))
+                cleanResult2.append(cleanResult(i+3))
+            }
+            
+            
+        }
+        // for(item <- cleanResult2) {
+        //     println(item)
+        // }
+        cleanResult2
     }
 
     def oncePerSecond() {
