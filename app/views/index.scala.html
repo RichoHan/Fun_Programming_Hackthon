@@ -1,0 +1,10 @@
+@(message: String, result: Array[String])
+
+@main("Biker Crawler") {
+
+    <h1>Extracted from BikerShop:</h1>
+    @for(i <- 0 until result.length){
+    	<p>@result(i)</p>
+    }
+
+}
