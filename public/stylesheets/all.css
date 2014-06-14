@@ -1,0 +1,111 @@
+/* line 3, all.css.scss */
+body {
+  line-height: 1.2; }
+
+/* line 7, all.css.scss */
+#main {
+  margin: 100px 0 50px; }
+
+/* line 10, all.css.scss */
+#footer {
+  padding: 40px 0 20px;
+  background-color: #eee;
+  border-top: 1px solid #cccccc; }
+
+/* line 16, all.css.scss */
+.navbar .brand {
+  color: #333;
+  font-size: 2em; }
+/* line 20, all.css.scss */
+.navbar .slogan {
+  color: #999; }
+
+/* line 25, all.css.scss */
+.slogan {
+  font-size: 0.7em;
+  margin-left: 0.5em; }
+
+/* line 30, all.css.scss */
+.job {
+  margin: 20px 0; }
+  /* line 32, all.css.scss */
+  .job header {
+    position: relative; }
+  /* line 35, all.css.scss */
+  .job .more {
+    position: absolute;
+    right: 0;
+    bottom: 5px; }
+
+/* line 42, all.css.scss */
+.card {
+  border: 1px solid #dddddd;
+  -webkit-box-shadow: 0 1px 4px #eeeeee;
+  box-shadow: 0 1px 4px #eeeeee;
+  -webkit-border-radius: 3px;
+  border-radius: 3px;
+  margin-bottom: 20px; }
+
+/* line 52, all.css.scss */
+.card-body {
+  padding: 10px 20px; }
+  /* line 54, all.css.scss */
+  .card-body h1 {
+    font-size: 28px; }
+
+/* line 58, all.css.scss */
+.card-footer {
+  border-top: 1px dashed #cccccc;
+  padding: 10px; }
+
+/* line 63, all.css.scss */
+.meta {
+  color: #ccc; }
+
+/* line 66, all.css.scss */
+.count {
+  font-size: 3em; }
+
+/* line 70, all.css.scss */
+.salary {
+  font-size: 2em;
+  color: #c00; }
+
+/* line 77, all.css.scss */
+.job-detail h3 {
+  line-height: 3em; }
+/* line 80, all.css.scss */
+.job-detail th {
+  width: 20%; }
+/* line 83, all.css.scss */
+.job-detail table {
+  margin-bottom: 0; }
+
+/* line 87, all.css.scss */
+.more-job {
+  margin: 30px 0 0; }
+
+/* line 91, all.css.scss */
+.brand {
+  -webkit-animation-duration: .9s; }
+
+@-webkit-keyframes welcome {
+  /* line 96, all.css.scss */
+  from {
+    -webkit-transform: scale(0);
+    opacity: 0; }
+
+  /* line 100, all.css.scss */
+  50% {
+    -webkit-transform: scale(0);
+    opacity: 0; }
+
+  /* line 104, all.css.scss */
+  82.5% {
+    -webkit-transform: scale(1.03);
+    -webkit-animation-timing-function: ease-out;
+    opacity: 1; }
+
+  /* line 109, all.css.scss */
+  to {
+    -webkit-transform: scale(1); } }

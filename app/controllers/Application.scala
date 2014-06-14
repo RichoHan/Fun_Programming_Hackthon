@@ -20,7 +20,7 @@ object Application extends Controller {
 
     // Call index.scala.html
   	def index = Action {
-		val result = grabURLBack(getRealIndex("http://www.ptt.cc/bbs/BikerShop/index.html", 1),10)
+		val result = grabURLBack(getRealIndex("http://www.ptt.cc/bbs/BikerShop/index.html", 1),1)
   		Ok(views.html.index("Your new application is not ready.", result.toArray))
   	}
 
