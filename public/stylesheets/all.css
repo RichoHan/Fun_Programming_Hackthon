@@ -1,6 +1,7 @@
 /* line 3, all.css.scss */
 body {
-  line-height: 1.2; }
+  line-height: 1.2; 
+}
 
 /* line 7, all.css.scss */
 #main {
@@ -111,5 +112,5 @@ body {
     -webkit-transform: scale(1); } }
 
 .span4{
-  height: 300px;
+  height: 250px;
 }

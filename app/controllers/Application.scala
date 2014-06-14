@@ -15,33 +15,25 @@ import scala.util.matching.Regex
 import scala.collection.mutable.ArrayBuffer
 import scala.io._
 import java.io._
-import State._
-
-case class State[S,+A](run: S => (A,S))
-{
-  def map[B](f: A => B): State[S,B] = State {
-    (s: S) => {
-      val p = run(s)
-      (f(p._1), p._2)
-    }
-  }
-  // flatMap(a => unit(f(a)))
-
-
-  def flatMap[B](f: A => State[S,B]): State[S,B] = State {
-    (s: S) => {
-      val p = run(s)
-      f(p._1).run(p._2)
-    }
-  }
-  
-}
+import play.api.db._
+import play.api.Play.current 
 
 object Application extends Controller {
 
     // Call index.scala.html
   	def index = Action {
-		val result = grabURLBack(getRealIndex("http://www.ptt.cc/bbs/BikerShop/index.html", 1),5)
+		val result = grabURLBack(getRealIndex("http://www.ptt.cc/bbs/BikerShop/index.html", 1),3)
+        // val conn = DB.getConnection()
+        // try {
+        //     // val stmt = conn.createStatement
+        //     // val rs = stmt.executeQuery("SELECT 9 as testkey ")
+        //     // while (rs.next()) {
+        //     //     outS    tring += rs.getString("testkey")
+        //     // }
+        // } finally {
+        //     conn.close()
+        // }
+
   		Ok(views.html.index("Your new application is not ready.", result.toArray))
   	}
 
@@ -51,80 +43,179 @@ object Application extends Controller {
 	}    
 
     def grabURLArray(urlArray: ArrayBuffer[String]) = {
-        var posts_result = ArrayBuffer[String]()
-        for (url <- urlArray) {
-            val posts = new post(url)
-            posts_result.append(url)
-            posts_result.appendAll( posts.urlToResult(url) )
-            posts_result.append("=====")
 
+        val posts_result = ArrayBuffer[String]()
+
+        @annotation.tailrec
+        def go(in: ArrayBuffer[String], result: ArrayBuffer[String]): ArrayBuffer[String] = {
+            if(in.isEmpty)
+                result
+            else{
+                val posts = new post(in(0))
+                val resultArray  = result += in(0)
+                val resultArray_1 = resultArray ++ posts.urlToResult(in(0))
+                val resultArray_2 = resultArray_1 +=  "====="
+                go(in.tail, resultArray_2)
+            }
         }
-        posts_result
+
+        go(urlArray, posts_result)
+        // for (url <- urlArray) {
+        //     val posts = new post(url)
+        //     posts_result.append(url)
+        //     posts_result.appendAll( posts.urlToResult(url) )
+        //     posts_result.append("=====")
+
+        // }
+        // posts_result
     }
     
     def getRealIndex(index_url: String, op: Int):String = {
-        var real_index = ""
-        var html = Source.fromURL(index_url)
-        var sourceString = html.mkString
-        var perLineString = sourceString.split("\n")
+
+        val html = Source.fromURL(index_url)
+        val sourceString = html.mkString
+        val perLineString = sourceString.split("\n")
+
         var linesWithArrow = perLineString.filter(_.contains("上頁"))
+
         if(op!=1){
             linesWithArrow = perLineString.filter(_.contains("下頁"))
         }
 
-        for (row <- linesWithArrow) {
-            var rowSplit = row.split("\"")
-            for (r <- rowSplit) {
-                if(r.contains("/bbs/BikerShop")) {
-                    var r2 = "http://www.ptt.cc" + r
-                    // println(r2)
-                    real_index = r2
+        // val linesWithArrow = if(op!=1){}else[}]
+
+        @annotation.tailrec
+        def go(in: Array[String], result: String):String = {
+            if(in.isEmpty)
+                result
+            else{
+                val row = in(0)
+                val rowSplit = row.split("\"")
+                val resultArray = gogo(rowSplit)
+                go(in.tail, resultArray)
+            }
+        }
+
+        @annotation.tailrec
+        def gogo(in: Array[String]): String = {
+            if(in(0).contains("/bbs/BikerShop")){
+                val result = "http://www.ptt.cc" + in(0)
+                result
+            }else{
+                gogo(in.tail)
+            }
+        }
+
+        // for (row <- linesWithArrow) {
+        //     val rowSplit = row.split("\"")
+        //     for (r <- rowSplit) {
+        //         if(r.contains("/bbs/BikerShop")) {
+        //             var r2 = "http://www.ptt.cc" + r
+        //             // println(r2)
+        //             real_index = r2
+        //         }
+        //     }
+        // }
+
+        val real_index = go(linesWithArrow, "")
+        if(op!=1)
+            real_index
+        else{
+            getRealIndex(real_index, 2)
+        }
+
+    }
+
+    def grabURLBack(url: String, amount : Int)  = {
+        val start = url.substring(37,41).toInt
+        // val result = ArrayBuffer[String]()
+
+        // 
+        val resultArray = ArrayBuffer[String]()
+
+        @annotation.tailrec
+        def grabURL(start: Int, count: Int, amount: Int, result: ArrayBuffer[String]): ArrayBuffer[String] = {
+            if(count>=amount){
+                result
+            }else{
+                oncePerSecond()
+                val postListResult = new postList("")
+                val resultArray = result ++ (grabURLArray(postListResult.urlToResult("http://www.ptt.cc/bbs/BikerShop/index"+(start-count)+".html")))
+                // println(resultArray)
+                grabURL(start, count+1, amount, resultArray)
+            }
+        }
+
+        val result = grabURL(start, 0, amount, resultArray)
+        // 
+
+        // for( k <- 0 to amount) {
+        //     var postListResult = new postList("")
+        //     // println("http://www.ptt.cc/bbs/BikerShop/index"+(start-k)+".html")
+
+        //     oncePerSecond()
+        //     result.appendAll(grabURLArray(postListResult.urlToResult("http://www.ptt.cc/bbs/BikerShop/index"+(start-k)+".html")))
+        // }
+
+
+        val cleanResult = ArrayBuffer[String]()
+        val cleanResult2 = ArrayBuffer[String]()
+
+
+        @annotation.tailrec
+        def cleanSpace(result: ArrayBuffer[String], cleanResult: ArrayBuffer[String]):ArrayBuffer[String] = {
+            if(result.isEmpty){
+                cleanResult
+            }else{
+                val item = result(0)
+                if(item != Nil && item.toString != "" && item.length >= 2 && item.toString.take(5)!="<span"){
+                    val cleanResult_1 = cleanResult += item
+                    cleanSpace(result.tail, cleanResult_1)
+                }else{
+                    cleanSpace(result.tail, cleanResult)
+                }
+            }
+            
+        }
+
+        // for(item <- result) {
+        //     if(item != Nil && item.toString != "" && item.length >= 2 && item.toString.take(5)!="<span"){
+        //         cleanResult.append(item)
+        //     }
+        // }
+
+        val cleanResult_1 = cleanSpace(result, cleanResult)
+
+        val result_length = result.length
+        @annotation.tailrec
+        def checkSet(count: Int, length: Int, result: ArrayBuffer[String], cleanSet: ArrayBuffer[String]):ArrayBuffer[String] = {
+            if(count>=length-4){
+                cleanSet
+            }else{
+                if(result(count).toString.takeRight(4) == "html" && result(count+3).toString == "====="){
+                    val cleanSet_1 = cleanSet ++ ArrayBuffer[String](result(count), result(count+1), result(count+2), result(count+3))
+                    checkSet(count+1, length, result, cleanSet_1)
+                }else{
+                    checkSet(count+1, length, result, cleanSet)
                 }
             }
         }
 
-        if(op!=1)
-            real_index
-        else{
-            real_index = getRealIndex(real_index, 2)
-            real_index
-        }
+        checkSet(0, result_length, cleanResult_1, cleanResult2)
 
-    }
-    
-    def grabURLBack(url: String, amount : Int)  = {
-        val start = url.substring(37,41).toInt
-        var result = ArrayBuffer[String]()
-        for( k <- 0 to amount) {
-            var postListResult = new postList("")
-            // println("http://www.ptt.cc/bbs/BikerShop/index"+(start-k)+".html")
+        // for(i <- 0 to cleanResult_1.length-4) {
+        //     if(cleanResult_1(i).toString.takeRight(4) == "html" && cleanResult_1(i+3).toString == "====="){
+        //         cleanResult2.append(cleanResult_1(i))
+        //         cleanResult2.append(cleanResult_1(i+1))
+        //         cleanResult2.append(cleanResult_1(i+2))
+        //         cleanResult2.append(cleanResult_1(i+3))
+        //     }    
+        // }
 
-            oncePerSecond()
-            result.appendAll(grabURLArray(postListResult.urlToResult("http://www.ptt.cc/bbs/BikerShop/index"+(start-k)+".html")))
-            // result.appendAll(grabURLArray(postListResult.urlToResult("http://www.ptt.cc/bbs/BikerShop/index"+(start-k)+".html")))
-        }
-        
-        var cleanResult = ArrayBuffer[String]()
-        var cleanResult2 = ArrayBuffer[String]()
-        for(item <- result) {
-            if(item != Nil && item.toString != "" && item.length >= 2 && item.toString.take(5)!="<span"){
-                cleanResult.append(item)
-            }
-        }
-        for(i <- 0 to cleanResult.length-1) {
-            if(cleanResult(i).toString.takeRight(4) == "html" && cleanResult(i+3).toString == "====="){
-                cleanResult2.append(cleanResult(i))
-                cleanResult2.append(cleanResult(i+1))
-                cleanResult2.append(cleanResult(i+2))
-                cleanResult2.append(cleanResult(i+3))
-            }
-            
-            
-        }
         // for(item <- cleanResult2) {
         //     println(item)
         // }
-        cleanResult2
+        // cleanResult2
     }
 
     def oncePerSecond() {
@@ -211,18 +302,44 @@ class postList(url: String) {
     }
 
     def getURLforPost(stringArray: Array[String]) : ArrayBuffer[String] = {
-        var resultArray = ArrayBuffer[String]()
-        for (row <- stringArray) {
-            val rowSplit = row.split("\"")
-            for (r <- rowSplit) {
-                if(r.contains("/bbs/BikerShop")) {
-                    val r2 = "http://www.ptt.cc" + r
-                    println(r2)
-                    resultArray += r2
-                }
+        val resultArray = ArrayBuffer[String]()
+
+        @annotation.tailrec
+        def go(in: Array[String], result: ArrayBuffer[String]): ArrayBuffer[String] = {
+            if(in.isEmpty)
+                result
+            else{
+                val row = in(0)
+                val rowSplit = row.split("\"")
+                val resultArray = result ++ gogo(rowSplit)
+                go(in.tail, resultArray)
             }
         }
-        resultArray
+
+        @annotation.tailrec
+        def gogo(in: Array[String]): ArrayBuffer[String] = {
+            if(in(0).contains("/bbs/BikerShop")){
+                val result = ArrayBuffer[String]("http://www.ptt.cc" + in(0))
+                result
+            }
+            else{
+                gogo(in.tail)
+            }
+        }     
+
+        go(stringArray, resultArray)
+
+        // for (row <- stringArray) {
+        //     val rowSplit = row.split("\"")
+        //     for (r <- rowSplit) {
+        //         if(r.contains("/bbs/BikerShop")) {
+        //             val r2 = "http://www.ptt.cc" + r
+        //             println(r2)
+        //             resultArray += r2
+        //         }
+        //     }
+        // }
+        // resultArray
     }
 
 
