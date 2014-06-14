@@ -22,7 +22,7 @@ object Application extends Controller {
 
     // Call index.scala.html
   	def index = Action {
-		val result = grabURLBack(getRealIndex("http://www.ptt.cc/bbs/BikerShop/index.html", 1),3)
+		val result = grabURLBack(getRealIndex("http://www.ptt.cc/bbs/BikerShop/index.html", 1),20)
 
   		Ok(views.html.index("Your new application is not ready.", result.toArray))
   	}
@@ -41,6 +41,7 @@ object Application extends Controller {
             if(in.isEmpty)
                 result
             else{
+                println(in(0))
                 val posts = new post(in(0))
                 val resultArray  = result += in(0)
                 val resultArray_1 = resultArray ++ posts.urlToResult(in(0))
@@ -50,6 +51,7 @@ object Application extends Controller {
         }
 
         go(urlArray, posts_result)
+        
         // for (url <- urlArray) {
         //     val posts = new post(url)
         //     posts_result.append(url)
@@ -176,12 +178,18 @@ object Application extends Controller {
 
         val cleanResult_1 = cleanSpace(result, cleanResult)
 
-        val result_length = result.length
+        val result_length = cleanResult_1.length
+
         @annotation.tailrec
         def checkSet(count: Int, length: Int, result: ArrayBuffer[String], cleanSet: ArrayBuffer[String]):ArrayBuffer[String] = {
             if(count>=length-4){
                 cleanSet
             }else{
+                // println(result.length)
+                // println(count)
+                if((count+3)>=result.length){
+                    println(result)
+                }
                 if(result(count).toString.takeRight(4) == "html" && result(count+3).toString == "====="){
                     val cleanSet_1 = cleanSet ++ ArrayBuffer[String](result(count), result(count+1), result(count+2), result(count+3))
                     checkSet(count+1, length, result, cleanSet_1)
