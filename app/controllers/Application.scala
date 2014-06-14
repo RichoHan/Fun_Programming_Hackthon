@@ -23,16 +23,6 @@ object Application extends Controller {
     // Call index.scala.html
   	def index = Action {
 		val result = grabURLBack(getRealIndex("http://www.ptt.cc/bbs/BikerShop/index.html", 1),3)
-        // val conn = DB.getConnection()
-        // try {
-        //     // val stmt = conn.createStatement
-        //     // val rs = stmt.executeQuery("SELECT 9 as testkey ")
-        //     // while (rs.next()) {
-        //     //     outS    tring += rs.getString("testkey")
-        //     // }
-        // } finally {
-        //     conn.close()
-        // }
 
   		Ok(views.html.index("Your new application is not ready.", result.toArray))
   	}
@@ -250,32 +240,64 @@ class post(url: String){
 
     def getNameAndPrice(stringArray: Array[String]) : ArrayBuffer[String] = {
         var resultArray = ArrayBuffer[String]()
-        for (row <- stringArray) {
-            if(!row.contains("必填")&&(row.contains("價格")||row.contains("名稱"))){
-                val rowSplit = row.split("\u2192")
-                for (r <- rowSplit) {
-                    if(!r.contains("\u300A")||(r.contains("價格")&& r.length > 10)||(r.contains("名稱")&& r.length > 10)) {
-                        if(r.contains("\u300A")){
-                            for( i <- 0 to r.length-1) { 
-                                if(r.substring(i,i+1) == "\u300B"){ 
-                                    val cleanR = r.substring(i+1,r.length-1) 
-                                    println(cleanR) 
-                                    resultArray += cleanR 
-                                } 
-                            } 
-                        } 
-                        else { 
-                            println(r) 
-                            resultArray += r 
-                        }
+        var rowSplitArray = ArrayBuffer[String]()
 
-                        // println(r)
-                        // resultArray += r
-                    }
+        @annotation.tailrec
+        def checkFormat(input : Array[String], result: ArrayBuffer[String]) : ArrayBuffer[String] = {
+            if (input.isEmpty) result
+            else {
+                val row = input(0)
+                if(!row.contains("必填")&&(row.contains("價格")||row.contains("名稱"))){
+                    val rowSplit = row.split("\u2192")
+                    addRowToRowSplitArray(rowSplit, result)
                 }
+                checkFormat(input.tail,result)
             }
         }
-        resultArray
+
+        @annotation.tailrec
+        def addRowToRowSplitArray(input : Array[String], result: ArrayBuffer[String]) : ArrayBuffer[String] = {
+            if(input.isEmpty) result
+            else {
+                val row = input(0)
+                result += row
+                addRowToRowSplitArray(input.tail, result)
+            }
+        }
+
+        val kk = checkFormat(stringArray, rowSplitArray)
+
+        @annotation.tailrec
+        def delLabel(in: ArrayBuffer[String], result: ArrayBuffer[String]):ArrayBuffer[String] = {
+            if(in.isEmpty){
+                result
+            }else{
+                val r = in(0)
+                if(!r.contains("\u300A")||(r.contains("價格")&& r.length > 10)||(r.contains("名稱")&& r.length > 10)) {
+                    if(r.contains("\u300A")){
+                        delLabel(in.tail, result += inDelLabel(0, r.length, r, ""))
+                    }else delLabel(in.tail, result += r)
+                }else delLabel(in.tail, result)
+            }
+        }
+
+        @annotation.tailrec
+        def inDelLabel(count: Int, length: Int, in: String, result: String): String = {
+            if(count >= length-1){
+                result
+            }else{
+                val r = in
+                if(r.substring(count,count+1) == "\u300B"){ 
+                    val cleanR = r.substring(count+1,r.length-1) 
+                    // println(cleanR) 
+                    // result = cleanR 
+                    inDelLabel(count+1,length, in, cleanR)
+                }else inDelLabel(count+1,length, in, result)
+            }
+        }
+
+        delLabel(kk, ArrayBuffer[String]())
+
     }
 
     def urlToResult(url: String) : ArrayBuffer[String] = {
